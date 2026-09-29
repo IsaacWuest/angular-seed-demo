@@ -1,0 +1,77 @@
+# OSS lifecycle risk scan, run directly on the CI runner.
+# Add this file at .github/workflows/herodevs-lifecycle-scan.yml
+#
+# Setup (once, before the demo):
+#   1. Locally: npx @herodevs/cli@latest auth login
+#   2. Locally: npx @herodevs/cli@latest auth provision-ci-token
+#   3. Save the printed token as a repository secret named HD_CI_CREDENTIAL
+#      (Settings > Secrets and variables > Actions > New repository secret)
+#   4. Push this file, then run it once from the Actions tab so a completed
+#      run exists as a fallback during the live demo.
+#
+# Demo flow: Actions tab > "OSS lifecycle risk scan" > Run workflow. The run
+# takes roughly one to two minutes. Open the run, expand "Summary", then
+# download the lifecycle-risk-report artifact and open the JSON.
+
+name: OSS lifecycle risk scan
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 13 * * 1-5'   # weekdays 13:00 UTC (07:00 Denver)
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Scan for unsupported and vulnerable open source
+        env:
+          HD_CI_CREDENTIAL: ${{ secrets.HD_CI_CREDENTIAL }}
+        run: |
+          npx --yes @herodevs/cli@latest scan eol \
+            --dir . \
+            --output herodevs-report.json \
+            --saveSbom \
+            --automated
+
+      - name: Write a short summary to the run page
+        run: |
+          node -e '
+            const r = require("./herodevs-report.json");
+            const m = r.metadata;
+            const cves = new Set();
+            for (const c of r.components) for (const s of (c.metadata.cveStats || [])) cves.add(s.cveId);
+            const lines = [
+              "## Lifecycle risk scan: " + (r.projectName || process.env.GITHUB_REPOSITORY),
+              "",
+              "| Metric | Value |",
+              "|---|---|",
+              "| Components | " + m.totalComponentsCount + " |",
+              "| Unsupported packages | " + m.eolPackagesCount + " |",
+              "| Unique CVEs | " + cves.size + " |",
+              "| Unknown components | " + m.unknownComponentsCount + " |",
+              "",
+              "Full report attached as the `lifecycle-risk-report` artifact."
+            ];
+            require("fs").appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join("\n") + "\n");
+          '
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: lifecycle-risk-report
+          path: |
+            herodevs-report.json
+            herodevs.sbom.json
+          retention-days: 30
