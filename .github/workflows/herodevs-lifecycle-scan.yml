@@ -8,6 +8,7 @@
 #      (Settings > Secrets and variables > Actions > New repository secret)
 #   4. Push this file, then run it once from the Actions tab so a completed
 #      run exists as a fallback during the live demo.
+# Note: the CLI only writes --output when --save is also passed.
 #
 # Demo flow: Actions tab > "OSS lifecycle risk scan" > Run workflow. The run
 # takes roughly one to two minutes. Open the run, expand "Summary", then
@@ -41,17 +42,23 @@ jobs:
         run: |
           npx --yes @herodevs/cli@latest scan eol \
             --dir . \
+            --save \
             --output herodevs-report.json \
             --saveSbom \
-            --automated
+            --automated 2>&1 | tee scan.log
+          grep -o 'https://apps.herodevs.com/eol/reports/[0-9a-f-]*' scan.log | head -1 > report-url.txt || true
 
       - name: Write a short summary to the run page
         run: |
           node -e '
             const r = require("./herodevs-report.json");
             const m = r.metadata;
-            const cves = new Set();
-            for (const c of r.components) for (const s of (c.metadata.cveStats || [])) cves.add(s.cveId);
+            const cves = new Set(); let nes = 0;
+            for (const c of r.components) {
+              for (const s of (c.metadata.cveStats || [])) cves.add(s.cveId);
+              if ((c.nesRemediation && c.nesRemediation.remediations || []).length) nes++;
+            }
+            const url = (require("fs").existsSync("report-url.txt") ? require("fs").readFileSync("report-url.txt","utf8").trim() : "");
             const lines = [
               "## Lifecycle risk scan: " + (r.projectName || process.env.GITHUB_REPOSITORY),
               "",
@@ -61,8 +68,10 @@ jobs:
               "| Unsupported packages | " + m.eolPackagesCount + " |",
               "| Unique CVEs | " + cves.size + " |",
               "| Unknown components | " + m.unknownComponentsCount + " |",
+              "| Supported builds available (NES) | " + nes + " |",
               "",
-              "Full report attached as the `lifecycle-risk-report` artifact."
+              (url ? "Hosted report: " + url + "\n\n" : "") +
+              "Full JSON report attached as the `lifecycle-risk-report` artifact."
             ];
             require("fs").appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join("\n") + "\n");
           '
