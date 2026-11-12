@@ -16,7 +16,7 @@
     "cpx": "^1.5.0",
     "http-server": "^0.11.1",
     "jasmine-core": "^3.3.0",
-    "karma": "^3.1.1",
+    "karma": "^6.4.4",
     "karma-chrome-launcher": "^2.2.0",
     "karma-firefox-launcher": "^1.1.0",
     "karma-jasmine": "^1.1.2",
@@ -61,5 +61,6 @@
     "parseuri": "npm:@neverendingsupport/parseuri@0.0.6-parseuri-0.0.8",
     "request": "npm:@neverendingsupport/request@2.88.2-request-2.88.3",
     "rimraf": "npm:@neverendingsupport/rimraf@2.7.1-rimraf-2.7.2"
+    "uuid": "3.3.3"
   }
 }
