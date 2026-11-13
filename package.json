@@ -40,6 +40,13 @@
     "update-index-async": "node --eval \"var fs=require('fs'),indexFile='app/index-async.html',loaderFile='app/lib/angular-loader/angular-loader.min.js',loaderText=fs.readFileSync(loaderFile,'utf-8').split(/sourceMappingURL=angular-loader.min.js.map/).join('sourceMappingURL=lib/angular-loader/angular-loader.min.js.map'),indexText=fs.readFileSync(indexFile,'utf-8').split(/\\/\\/@@NG_LOADER_START@@[\\s\\S]*\\/\\/@@NG_LOADER_END@@/).join('//@@NG_LOADER_START@@\\n'+loaderText+'    //@@NG_LOADER_END@@');fs.writeFileSync(indexFile,indexText);\""
   },
   "overrides": {
-    "uuid": "3.3.3"
+    "uuid": "3.3.3",
+    "braces@>=2.3.0 <=2.3.2": "npm:@neverendingsupport/braces@2.3.2-braces-2.3.4",
+    "braces@>=3.0.0 <=3.0.3": "npm:@neverendingsupport/braces@3.0.3-braces-3.0.5",
+    "fsevents@>=1.2.0 <=1.2.13": "npm:@neverendingsupport/fsevents@1.2.13-fsevents-1.2.14",
+    "inflight": "npm:@neverendingsupport/inflight@1.0.6-inflight-1.0.7",
+    "micromatch@>=3.1.0 <=3.1.10": "npm:@neverendingsupport/micromatch@3.1.10-micromatch-3.1.12",
+    "request": "npm:@neverendingsupport/request@2.88.2-request-2.88.3",
+    "rimraf@>=3.0.0 <=3.0.2": "npm:@neverendingsupport/rimraf@3.0.2-rimraf-3.0.3"
   }
 }
